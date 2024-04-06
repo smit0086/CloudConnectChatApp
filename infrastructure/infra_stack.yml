@@ -1,0 +1,330 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation template for DynamoDB tables
+
+Resources:
+  ChatsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: chats_iac
+      AttributeDefinitions:
+        - AttributeName: chat_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: chat_id
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+  ConnectionTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: connection_iac
+      AttributeDefinitions:
+        - AttributeName: connectionId
+          AttributeType: S
+        - AttributeName: user
+          AttributeType: S
+      KeySchema:
+        - AttributeName: connectionId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: user-index
+          KeySchema:
+            - AttributeName: user
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+      BillingMode: PAY_PER_REQUEST
+
+  FriendlistTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: friendlist_iac
+      AttributeDefinitions:
+        - AttributeName: user
+          AttributeType: S
+      KeySchema:
+        - AttributeName: user
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+  UserDetailsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: user-details_iac
+      AttributeDefinitions:
+        - AttributeName: user
+          AttributeType: S
+      KeySchema:
+        - AttributeName: user
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+  AddFriendLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: addFriendLambda_iac
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: ReadWriteFriendList
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:GetItem
+                  - dynamodb:UpdateItem
+                Resource: !GetAtt FriendlistTable.Arn
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+  ConnectDisconnectSocketLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: ConnectDisconnectSocketLambda_iac
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: ReadWriteConnectionsDynamoDB
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:GetItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                Resource: !GetAtt ConnectionTable.Arn
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonAPIGatewayInvokeFullAccess
+        - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  GetChatMessagesRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: getChatMessages_iac
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: ReadChatsDynamoDB
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                Resource: !GetAtt ChatsTable.Arn
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  GetFriendsLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: getFriendsLambda_iac
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: DynamoDBReadAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:Query
+                Resource: "*"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
+        - arn:aws:iam::aws:policy/AmazonCognitoReadOnly
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  GetTranslationLangsLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: getTranslationLangsLambda_iac
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: ListTranslationLangs
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - translate:ListLanguages
+                Resource: "*"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  GetUserDetailsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: getUserDetails_iac
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: ReadUserDetailsLambda
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                Resource: !GetAtt UserDetailsTable.Arn
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
+        - arn:aws:iam::aws:policy/AmazonCognitoReadOnly
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  SendMessageLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: sendMessageLambda_iac
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: QueryConnectionsDynamoDB
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:Query
+                Resource:
+                  - !GetAtt ConnectionTable.Arn
+                  - !Sub "${ConnectionTable.Arn}/index/user-index"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonAPIGatewayInvokeFullAccess
+        - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  TranslateTextLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: translateTextLambda_iac
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: DetectLanguageComprehend
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - comprehend:DetectDominantLanguage
+                Resource: "*"
+        - PolicyName: ReadTranslateText
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - translate:TranslateText
+                Resource: "*"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+  
+  Smit0086ProfilePicsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: smit0086-profile-pics-iac
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: ObjectWriter
+
+  Smit0086ProfilePicsBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref Smit0086ProfilePicsBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: "PublicReadGetObject"
+            Effect: "Allow"
+            Principal: "*"
+            Action: "s3:GetObject"
+            Resource: !Sub "arn:aws:s3:::${Smit0086ProfilePicsBucket}/*"
+
+  UploadProfilePictureLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: uploadProfilePictureLambda_iac
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: PutObjectToProfilePicsLambda
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: s3:PutObject
+                Resource: !Sub "arn:aws:s3:::${Smit0086ProfilePicsBucket}/*"
+        - PolicyName: AccessUserDetailsTable
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:GetItem
+                  - dynamodb:UpdateItem
+                Resource: !GetAtt UserDetailsTable.Arn
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
