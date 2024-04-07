@@ -1,0 +1,31 @@
+image: python:3.8
+
+stages:
+  - build
+  - deploy
+
+create_package:
+  stage: build
+  script:
+    - apt-get update && apt-get install -y zip  # Install zip if it's not available
+    - cd lambda/layers
+    - python -m venv venv  # Create a virtual environment
+    - source venv/bin/activate  # Activate the virtual environment
+    - pip install -r requirements.txt  # Install dependencies
+    - deactivate  # Deactivate the virtual environment
+    - cd venv && zip -r9 ../function.zip .  # Package the virtual environment
+    - cd .. && zip -ur function.zip *.py  # Add your lambda function to the zip
+  artifacts:
+    paths:
+      - function.zip
+    expire_in: 1 hour
+
+upload_to_s3:
+  stage: deploy
+  image: python:3.8-slim  # Using a slim image for deployment
+  script:
+    - apt-get update && apt-get install -y awscli  # Install AWS CLI
+    - echo $AWS_DEFAULT_REGION  # Optional: Print the AWS region, for debug purposes
+    - aws s3 cp function.zip s3://term-project-lamdas/layer/function.zip  # Upload to S3
+  only:
+    - main  # Only run this job on the master branch

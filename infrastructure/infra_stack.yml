@@ -328,3 +328,49 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  DemoPoolIac:
+      Type: AWS::Cognito::UserPool
+      Properties:
+        UserPoolName: "demo-pool-iac"
+        Policies:
+          PasswordPolicy:
+            MinimumLength: 8
+            RequireUppercase: true
+            RequireLowercase: true
+            RequireNumbers: true
+            RequireSymbols: true
+        Schema:
+          - Name: name
+            Required: true
+            Mutable: true
+          - Name: email
+            Required: true
+            Mutable: true
+            AttributeDataType: String
+            DeveloperOnlyAttribute: false
+            StringAttributeConstraints:
+              MinLength: "0"
+              MaxLength: "2048"
+        AutoVerifiedAttributes:
+          - email
+        EmailVerificationSubject: "Your verification code"
+        EmailVerificationMessage: "Your verification code is {####}."
+        AccountRecoverySetting:
+          RecoveryMechanisms:
+            - Name: verified_email
+              Priority: 1
+        UsernameAttributes:
+          - email
+        AdminCreateUserConfig:
+          AllowAdminCreateUserOnly: false
+          InviteMessageTemplate:
+            EmailMessage: "Your username is {username} and temporary password is {####}."
+            EmailSubject: "Your temporary password"
+        MfaConfiguration: "OFF"
+
+  DemoAppClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref DemoPoolIac
+      ClientName: "demo"
