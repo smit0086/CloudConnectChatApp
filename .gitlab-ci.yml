@@ -17,7 +17,7 @@ create_package:
     - cd .. && zip -ur function.zip *.py  # Add your lambda function to the zip
   artifacts:
     paths:
-      - function.zip
+      - lambda/layers/function.zip
     expire_in: 1 hour
 
 upload_to_s3:
