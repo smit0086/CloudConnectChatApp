@@ -8,5 +8,4 @@ top-level-job:
     - echo "Hello."
 
 include:
-  # - local: /frontend/.gitlab-ci.yml
   - local: /lambda/.gitlab-ci.yml
