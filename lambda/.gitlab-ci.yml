@@ -48,5 +48,3 @@ upload_to_s3:
       for f in *.zip; do
         aws s3 cp "$f" "s3://term-project-lamdas/functions/$f"
       done
-  only:
-    - main  # Only run this job on the master branch
