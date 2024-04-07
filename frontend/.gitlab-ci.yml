@@ -1,0 +1,42 @@
+stages:
+  - build
+  - deploy
+
+.frontend-common:
+  rules:
+    - changes: 
+        - frontend/*
+
+variables:
+  AWS_REGION: "us-east-1"  # Change to your AWS region
+  DOCKER_IMAGE_NAME: "term-frontend"
+  EB_ENV_NAME: "term-fe-env"
+  EB_APP_NAME: "term-fe-react"
+  AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID  # Set in GitLab CI/CD environment variables
+  AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY  # Set in GitLab CI/CD environment variables
+
+frontend-build-job:
+  extends: .frontend-common
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - docker build -t $DOCKER_IMAGE_NAME .
+    - docker tag $DOCKER_IMAGE_NAME:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$DOCKER_IMAGE_NAME:latest
+    - $(aws ecr get-login --no-include-email --region $AWS_REGION)
+    - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$DOCKER_IMAGE_NAME:latest
+
+frotend-deploy-job:
+  extends: .frontend-common
+  stage: deploy
+  image: python:latest
+  script:
+    - pip install awsebcli
+    - echo "Deploying to Elastic Beanstalk"
+    - eb init $EB_APP_NAME --platform docker --region $AWS_REGION
+    - eb setenv AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+    - eb use $EB_ENV_NAME
+    - eb deploy --staged
+  only:
+    - main  # or main, depending on your default branch

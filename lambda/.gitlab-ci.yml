@@ -1,0 +1,52 @@
+image: python:3.8
+
+stages:
+  - build
+  - deploy
+
+.lambda-common:
+  rules:
+    - changes: 
+        - lambda/*
+
+create_package:
+  extends: .lambda-common
+  stage: build
+  script:
+    - apt-get update && apt-get install -y zip  # Install zip if it's not available
+    - cd lambda/layers
+    - python -m venv python  # Create a virtual environment
+    - source python/bin/activate  # Activate the virtual environment
+    - pip install -r requirements.txt  # Install dependencies
+    - deactivate  # Deactivate the virtual environment
+    - mv *.py python/lib/python3.8/site-packages/  # Move your lambda function to the virtual environment
+    - cd ${CI_PROJECT_DIR}/lambda/layers
+    - zip -r9 python.zip . # Package the virtual environment
+    - cd ${CI_PROJECT_DIR}/lambda/functions
+    - mkdir packaged
+    - |
+      for f in *.py; do
+        base=$(basename "$f" .py)
+        zip "packaged/$base.zip" "$f"
+      done
+  artifacts:
+    paths:
+      - lambda/layers/python.zip
+      - lambda/functions/packaged/*.zip
+    expire_in: 1 hour
+
+upload_to_s3:
+  extends: .lambda-common
+  stage: deploy
+  image: python:3.8-slim  # Using a slim image for deployment
+  script:
+    - apt-get update && apt-get install -y awscli  # Install AWS CLI
+    - echo $AWS_DEFAULT_REGION  # Optional: Print the AWS region, for debug purposes
+    - aws s3 cp lambda/layers/python.zip s3://term-project-lamdas/layer/python.zip  # Upload to S3
+    - cd lambda/functions/packaged
+    - |
+      for f in *.zip; do
+        aws s3 cp "$f" "s3://term-project-lamdas/functions/$f"
+      done
+  only:
+    - main  # Only run this job on the master branch
