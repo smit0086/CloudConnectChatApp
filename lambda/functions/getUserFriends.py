@@ -99,4 +99,4 @@ def get_last_message_details(chat_id):
     table = dynamodb.Table('chats')
     response = table.get_item(Key={'chat_id': chat_id})
     chats = response.get('Item', {}).get('messages', [])
-    return chats[-1]
+    return chats[-1] if len(chats) > 0 else {}

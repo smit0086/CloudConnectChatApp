@@ -5,7 +5,7 @@ Resources:
   ChatsTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: chats_iac
+      TableName: chats
       AttributeDefinitions:
         - AttributeName: chat_id
           AttributeType: S
@@ -17,7 +17,7 @@ Resources:
   ConnectionTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: connection_iac
+      TableName: connections
       AttributeDefinitions:
         - AttributeName: connectionId
           AttributeType: S
@@ -38,7 +38,7 @@ Resources:
   FriendlistTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: friendlist_iac
+      TableName: friendlist
       AttributeDefinitions:
         - AttributeName: user
           AttributeType: S
@@ -50,7 +50,7 @@ Resources:
   UserDetailsTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: user-details_iac
+      TableName: user-details
       AttributeDefinitions:
         - AttributeName: user
           AttributeType: S
@@ -228,11 +228,22 @@ Resources:
             Version: '2012-10-17'
             Statement:
               - Effect: Allow
+                Action: dynamodb:Query
+                Resource: !GetAtt ConnectionTable.Arn
+              - Effect: Allow
+                Action: dynamodb:Query
+                Resource: !Sub "${ConnectionTable.Arn}/index/user-index"
+        - PolicyName: ReadWriteChatsDynamoDB
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
                 Action:
-                  - dynamodb:Query
+                  - dynamodb:PutItem
+                  - dynamodb:GetItem
+                  - dynamodb:UpdateItem
                 Resource:
-                  - !GetAtt ConnectionTable.Arn
-                  - !Sub "${ConnectionTable.Arn}/index/user-index"
+                  - !GetAtt ChatsTable.Arn
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonAPIGatewayInvokeFullAccess
         - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
@@ -273,7 +284,7 @@ Resources:
   Smit0086ProfilePicsBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: smit0086-profile-pics-iac
+      BucketName: smit0086-profile-pics
       PublicAccessBlockConfiguration:
         BlockPublicAcls: false
         BlockPublicPolicy: false
@@ -388,6 +399,17 @@ Resources:
       CompatibleArchitectures:
         - x86_64
 
+  TermProjectRestApiGateway:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: "term-project-rest-api-iac"
+      Description: "API Gateway for term project"
+      EndpointConfiguration:
+        Types:
+          - "REGIONAL"
+      BinaryMediaTypes:
+        - "multipart/form-data"
+
   GetUserFriendsFunction:
     Type: AWS::Lambda::Function
     Properties:
@@ -401,11 +423,213 @@ Resources:
         - !Ref LambdaDependencyLayer
       Role: !GetAtt GetFriendsLambdaRole.Arn
 
-  TermProjectRestApiGateway:
-    Type: AWS::ApiGateway::RestApi
+  getChatMessages:
+    Type: AWS::Lambda::Function
     Properties:
-      Name: "term-project-rest-api-iac"
-      Description: "API Gateway for term project"
+      FunctionName: "getChatMessages_iac"
+      Handler: "getChatMessages.lambda_handler"  # Update this based on your function's entry point
+      Runtime: python3.8
+      Code:
+        S3Bucket: "term-project-lamdas"  # Replace with your actual bucket name
+        S3Key: "functions/getChatMessages.zip"  # Replace with the actual S3 key
+      Layers:
+        - !Ref LambdaDependencyLayer
+      Role: !GetAtt GetChatMessagesRole.Arn
+
+  getChatMessagesLambdaPermissionApiGateway:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: "lambda:InvokeFunction"
+      FunctionName: !Ref getChatMessages
+      Principal: "apigateway.amazonaws.com"
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${TermProjectRestApiGateway}/*"
+
+  sendMessage:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: "sendMessage_iac"
+      Handler: "sendMessage.lambda_handler"  # Update this based on your function's entry point
+      Runtime: python3.8
+      Code:
+        S3Bucket: "term-project-lamdas"  # Replace with your actual bucket name
+        S3Key: "functions/sendMessage.zip"  # Replace with the actual S3 key
+      Layers:
+        - !Ref LambdaDependencyLayer
+      Role: !GetAtt SendMessageLambdaRole.Arn
+
+  sendMessageLambdaPermissionApiGateway:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: "lambda:InvokeFunction"
+      FunctionName: !Ref sendMessage
+      Principal: "apigateway.amazonaws.com"
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${TermProjectRestApiGateway}/*"
+
+  addFriend:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: "addFriend_iac"
+      Handler: "addFriend.lambda_handler"  # Update this based on your function's entry point
+      Runtime: python3.8
+      Code:
+        S3Bucket: "term-project-lamdas"  # Replace with your actual bucket name
+        S3Key: "functions/addFriend.zip"  # Replace with the actual S3 key
+      Layers:
+        - !Ref LambdaDependencyLayer
+      Role: !GetAtt AddFriendLambdaRole.Arn
+
+  addFriendLambdaPermissionApiGateway:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: "lambda:InvokeFunction"
+      FunctionName: !Ref addFriend
+      Principal: "apigateway.amazonaws.com"
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${TermProjectRestApiGateway}/*"
+
+  getUserDetails:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: "getUserDetails_iac"
+      Handler: "getUserDetails.lambda_handler"  # Update this based on your function's entry point
+      Runtime: python3.8
+      Code:
+        S3Bucket: "term-project-lamdas"  # Replace with your actual bucket name
+        S3Key: "functions/getUserDetails.zip"  # Replace with the actual S3 key
+      Layers:
+        - !Ref LambdaDependencyLayer
+      Role: !GetAtt GetUserDetailsRole.Arn
+
+  getUserDetailsLambdaPermissionApiGateway:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: "lambda:InvokeFunction"
+      FunctionName: !Ref getUserDetails
+      Principal: "apigateway.amazonaws.com"
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${TermProjectRestApiGateway}/*" 
+
+  addProfilePicture:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: "addProfilePicture_iac"
+      Handler: "addProfilePicture.lambda_handler"  # Update this based on your function's entry point
+      Runtime: python3.8
+      Code:
+        S3Bucket: "term-project-lamdas"  # Replace with your actual bucket name
+        S3Key: "functions/addProfilePicture.zip"  # Replace with the actual S3 key
+      Layers:
+        - !Ref LambdaDependencyLayer
+      Role: !GetAtt UploadProfilePictureLambdaRole.Arn
+
+  addProfilePictureLambdaPermissionApiGateway:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: "lambda:InvokeFunction"
+      FunctionName: !Ref addProfilePicture
+      Principal: "apigateway.amazonaws.com"
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${TermProjectRestApiGateway}/*" 
+
+  getTranslationLangs:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: "getTranslationLangs_iac"
+      Handler: "getTranslationLangs.lambda_handler"  # Update this based on your function's entry point
+      Runtime: python3.8
+      Code:
+        S3Bucket: "term-project-lamdas"  # Replace with your actual bucket name
+        S3Key: "functions/getTranslationLangs.zip"  # Replace with the actual S3 key
+      Layers:
+        - !Ref LambdaDependencyLayer
+      Role: !GetAtt GetTranslationLangsLambdaRole.Arn
+
+  getTranslationLangsLambdaPermissionApiGateway:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: "lambda:InvokeFunction"
+      FunctionName: !Ref getTranslationLangs
+      Principal: "apigateway.amazonaws.com"
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${TermProjectRestApiGateway}/*" 
+
+  translateText:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: "translateText_iac"
+      Handler: "translateText.lambda_handler"  # Update this based on your function's entry point
+      Runtime: python3.8
+      Code:
+        S3Bucket: "term-project-lamdas"  # Replace with your actual bucket name
+        S3Key: "functions/translateText.zip"  # Replace with the actual S3 key
+      Layers:
+        - !Ref LambdaDependencyLayer
+      Role: !GetAtt TranslateTextLambdaRole.Arn
+
+  translateTextLambdaPermissionApiGateway:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: "lambda:InvokeFunction"
+      FunctionName: !Ref translateText
+      Principal: "apigateway.amazonaws.com"
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${TermProjectRestApiGateway}/*" 
+
+  ChatResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref TermProjectRestApiGateway
+      ParentId: !GetAtt TermProjectRestApiGateway.RootResourceId
+      PathPart: 'chat'
+
+  ChatGet:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref TermProjectRestApiGateway
+      ResourceId: !Ref ChatResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${getChatMessages.Arn}/invocations
+
+  ChatPost:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref TermProjectRestApiGateway
+      ResourceId: !Ref ChatResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${sendMessage.Arn}/invocations
+
+  ChatOptions:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref TermProjectRestApiGateway
+      ResourceId: !Ref ChatResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        RequestTemplates:
+          application/json: |
+            {
+              "statusCode": 200
+            }
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseTemplates:
+              application/json: |
+                {}
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Origin: true
 
   FriendsResource:
     Type: AWS::ApiGateway::Resource
@@ -468,6 +692,287 @@ Resources:
       Principal: "apigateway.amazonaws.com"
       SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${TermProjectRestApiGateway}/*"
 
+  FriendsAddResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref TermProjectRestApiGateway
+      ParentId: !Ref FriendsResource
+      PathPart: 'add'
+
+  FriendsAddPost:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref TermProjectRestApiGateway
+      ResourceId: !Ref FriendsAddResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${addFriend.Arn}/invocations
+
+  FriendsAddOptions:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref TermProjectRestApiGateway
+      ResourceId: !Ref FriendsAddResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        RequestTemplates:
+          application/json: |
+            {
+              "statusCode": 200
+            }
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseTemplates:
+              application/json: |
+                {}
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Origin: true
+
+  ProfileResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref TermProjectRestApiGateway
+      ParentId: !GetAtt TermProjectRestApiGateway.RootResourceId
+      PathPart: 'profile'
+
+  ProfileGet:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref TermProjectRestApiGateway
+      ResourceId: !Ref ProfileResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${getUserDetails.Arn}/invocations
+
+  ProfileOptions:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref TermProjectRestApiGateway
+      ResourceId: !Ref ProfileResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        RequestTemplates:
+          application/json: |
+            {
+              "statusCode": 200
+            }
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseTemplates:
+              application/json: |
+                {}
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Origin: true
+
+  ProfilePictureResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref TermProjectRestApiGateway
+      ParentId: !Ref ProfileResource
+      PathPart: 'picture'
+
+  ProfilePicturePost:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref TermProjectRestApiGateway
+      ResourceId: !Ref ProfilePictureResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${addProfilePicture.Arn}/invocations
+
+  ProfilePictureOptions:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref TermProjectRestApiGateway
+      ResourceId: !Ref ProfilePictureResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        RequestTemplates:
+          application/json: |
+            {
+              "statusCode": 200
+            }
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseTemplates:
+              application/json: |
+                {}
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Origin: true
+
+  TranslationResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref TermProjectRestApiGateway
+      ParentId: !GetAtt TermProjectRestApiGateway.RootResourceId
+      PathPart: 'translation'
+
+  TranslationOptions:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref TermProjectRestApiGateway
+      ResourceId: !Ref TranslationResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        RequestTemplates:
+          application/json: |
+            {
+              "statusCode": 200
+            }
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseTemplates:
+              application/json: |
+                {}
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Origin: true
+
+  TranslationLanguagesResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref TermProjectRestApiGateway
+      ParentId: !Ref TranslationResource
+      PathPart: 'languages'
+
+  TranslationLanguagesGet:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref TermProjectRestApiGateway
+      ResourceId: !Ref TranslationLanguagesResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${getTranslationLangs.Arn}/invocations
+
+  TranslationLanguagesOptions:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref TermProjectRestApiGateway
+      ResourceId: !Ref TranslationLanguagesResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        RequestTemplates:
+          application/json: |
+            {
+              "statusCode": 200
+            }
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseTemplates:
+              application/json: |
+                {}
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Origin: true
+
+  TranslationTranslateResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref TermProjectRestApiGateway
+      ParentId: !Ref TranslationResource
+      PathPart: 'translate'
+
+  TranslationTranslatePost:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref TermProjectRestApiGateway
+      ResourceId: !Ref TranslationTranslateResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${translateText.Arn}/invocations
+
+  TranslationTranslateOptions:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref TermProjectRestApiGateway
+      ResourceId: !Ref TranslationTranslateResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        RequestTemplates:
+          application/json: |
+            {
+              "statusCode": 200
+            }
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseTemplates:
+              application/json: |
+                {}
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Origin: true
 
   ApiGatewayDeployment:
     Type: AWS::ApiGateway::Deployment
@@ -475,5 +980,18 @@ Resources:
       RestApiId: !Ref TermProjectRestApiGateway
       StageName: dev
     DependsOn:
-      - FriendsOptionsMethod
+      - ChatGet
+      - ChatPost
+      - ChatOptions
       - GetFriendsMethod
+      - FriendsOptionsMethod
+      - FriendsAddPost
+      - FriendsAddOptions
+      - ProfileGet
+      - ProfileOptions
+      - ProfilePicturePost
+      - ProfilePictureOptions
+      - TranslationLanguagesGet
+      - TranslationLanguagesOptions
+      - TranslationTranslatePost
+      - TranslationTranslateOptions

@@ -75,7 +75,7 @@ def lambda_handler(event, context):
         client.post_to_connection(ConnectionId=connection_id, Data=json.dumps(message).encode('utf-8'))
     for friendConnection in responseFriendsConnections['Items']:
         connection_id = friendConnection['connectionId']
-        client.post_to_connection(ConnectionId=connection_id, Data=json.dumps(message).encode('utf-'))
+        client.post_to_connection(ConnectionId=connection_id, Data=json.dumps(message).encode('utf-8'))
         
     return {
             'statusCode': 200,

@@ -24,6 +24,7 @@ def lambda_handler(event, context):
     user_email = claims['email']
     
     content_type = event['headers']['Content-Type'] if 'Content-Type' in event['headers'] else event['headers']['content-type']
+    print(event)
     postdata = base64.b64decode(event['body'])
 
     request = {} # Save request here
