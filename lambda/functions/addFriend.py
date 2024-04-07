@@ -36,7 +36,7 @@ def add_friend(user_email, friend_email):
 
 def lambda_handler(event, context):
     token = event['headers']['Authorization']
-    print(event)
+    print("event, ",event)
     claims = verify_token.verify_token(token)
     if claims is None:
         return {'statusCode': 400, 'body': json.dumps('Token verification failed.')}
