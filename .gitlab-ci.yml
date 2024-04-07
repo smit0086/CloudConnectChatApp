@@ -27,6 +27,6 @@ upload_to_s3:
   script:
     - apt-get update && apt-get install -y awscli  # Install AWS CLI
     - echo $AWS_DEFAULT_REGION  # Optional: Print the AWS region, for debug purposes
-    - aws s3 cp lambda/layers/function.zip s3://term-project-lamdas/layer/python.zip  # Upload to S3
+    - aws s3 cp lambda/layers/python.zip s3://term-project-lamdas/layer/python.zip  # Upload to S3
   only:
     - main  # Only run this job on the master branch
