@@ -9,6 +9,8 @@ stages:
 
 variables:
   AWS_REGION: "us-east-1"  # Change to your AWS region
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_HOST: "tcp://docker:2375"
   DOCKER_IMAGE_NAME: "term-frontend"
   EB_ENV_NAME: "term-fe-env"
   EB_APP_NAME: "term-fe-react"
