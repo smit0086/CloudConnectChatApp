@@ -374,3 +374,16 @@ Resources:
     Properties:
       UserPoolId: !Ref DemoPoolIac
       ClientName: "demo"
+
+  LambdaDependencyLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: "DependencyLayer"
+      Description: "Python 3.8 dependencies layer for my functions"
+      Content: 
+        S3Bucket: "term-project-lamdas"
+        S3Key: "layer/python.zip"
+      CompatibleRuntimes: 
+        - python3.8
+      CompatibleArchitectures:
+        - x86_64

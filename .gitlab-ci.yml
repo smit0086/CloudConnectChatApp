@@ -9,15 +9,16 @@ create_package:
   script:
     - apt-get update && apt-get install -y zip  # Install zip if it's not available
     - cd lambda/layers
-    - python -m venv venv  # Create a virtual environment
-    - source venv/bin/activate  # Activate the virtual environment
+    - python -m venv python  # Create a virtual environment
+    - source python/bin/activate  # Activate the virtual environment
     - pip install -r requirements.txt  # Install dependencies
     - deactivate  # Deactivate the virtual environment
-    - mv *.py venv/lib/python3.8/site-packages/  # Move your lambda function to the virtual environment
-    - cd venv/lib/python3.8/site-packages && zip -r9 ${CI_PROJECT_DIR}/lambda/layers/function.zip .  # Package the virtual environment
+    - mv *.py python/lib/python3.8/site-packages/  # Move your lambda function to the virtual environment
+    - cd ${CI_PROJECT_DIR}/lambda/layers
+    - zip -r9 python.zip .  # Package the virtual environment
   artifacts:
     paths:
-      - lambda/layers/function.zip
+      - lambda/layers/python.zip
     expire_in: 1 hour
 
 upload_to_s3:
@@ -26,6 +27,6 @@ upload_to_s3:
   script:
     - apt-get update && apt-get install -y awscli  # Install AWS CLI
     - echo $AWS_DEFAULT_REGION  # Optional: Print the AWS region, for debug purposes
-    - aws s3 cp lambda/layers/function.zip s3://term-project-lamdas/layer/function.zip  # Upload to S3
+    - aws s3 cp lambda/layers/function.zip s3://term-project-lamdas/layer/python.zip  # Upload to S3
   only:
     - main  # Only run this job on the master branch
