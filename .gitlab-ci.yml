@@ -1,10 +1,6 @@
 stages:
   - build
   - deploy
-  
-variables:
-  DOCKER_HOST: "tcp://docker:2375"
-  DOCKER_TLS_CERTDIR: ""
 
 top-level-job:
   stage: build
@@ -12,5 +8,5 @@ top-level-job:
     - echo "Hello."
 
 include:
-  - local: /frontend/.gitlab-ci.yml
+  # - local: /frontend/.gitlab-ci.yml
   - local: /lambda/.gitlab-ci.yml
