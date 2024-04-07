@@ -14,14 +14,13 @@ variables:
   EB_APP_NAME: "term-fe-react"
   AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID  # Set in GitLab CI/CD environment variables
   AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY  # Set in GitLab CI/CD environment variables
+  DOCKER_HOST: "tcp://docker:2375"
+  DOCKER_TLS_CERTDIR: ""
 
 frontend-build-job:
   extends: .frontend-common
   stage: build
   image: docker:latest
-  variables:
-    DOCKER_HOST: "tcp://docker:2375"
-    DOCKER_TLS_CERTDIR: ""
   services:
     - docker:dind
   script:
