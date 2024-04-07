@@ -387,3 +387,16 @@ Resources:
         - python3.8
       CompatibleArchitectures:
         - x86_64
+
+  GetUserFriendsFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: "getUserFriends_iac"
+      Handler: "getUserFriends.lambda_handler"  # Update this based on your function's entry point
+      Runtime: python3.8
+      Code:
+        S3Bucket: "term-project-lamdas"  # Replace with your actual bucket name
+        S3Key: "functions/getUserFriends.zip"  # Replace with the actual S3 key
+      Layers:
+        - !Ref LambdaDependencyLayer
+      Role: !GetAtt GetFriendsLambdaRole.Arn
