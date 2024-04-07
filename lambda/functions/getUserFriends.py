@@ -10,9 +10,10 @@ dynamodb = boto3.resource('dynamodb')
 client = boto3.client('cognito-idp')
 
 def lambda_handler(event, context):
-    user_pool_id = 'us-east-1_WC5D1U2CZ'
-    region = 'us-east-1'
-    app_client_id = '25ir8q2ji7jt9abs11ulpvlrqi'
+    user_pool_id = os.environ['USER_POOL_ID']
+    
+    region = os.environ['REGION']
+    app_client_id = os.environ['APP_CLIENT_ID']
     print("headers", json.dumps(event))
     token = event['headers']['Authorization']
     public_key = get_public_key(token, user_pool_id, region)
@@ -78,8 +79,9 @@ def get_friends_details(friends_list, user_email):
     for email in friends_list:
         response = table.get_item(Key={'user': email})
         user_details = response.get('Item', {}).get('details', {})
+        user_pool_id = os.environ['USER_POOL_ID']
         cognitoAttr = client.admin_get_user(
-            UserPoolId='us-east-1_WC5D1U2CZ',
+            UserPoolId=user_pool_id,
             Username=email
         )['UserAttributes']
         attr_dict = {d["Name"]: d["Value"] for d in cognitoAttr}

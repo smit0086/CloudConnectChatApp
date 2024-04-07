@@ -21,8 +21,10 @@ def lambda_handler(event, context):
     table = dynamodb.Table('user-details')
     response = table.get_item(Key={'user': user_email})
     user_details = response.get('Item', {}).get('details', {})
+    user_pool_id = os.environ['USER_POOL_ID']
+    print("user_pool_id: ", user_pool_id)
     cognitoAttr = client.admin_get_user(
-            UserPoolId='us-east-1_WC5D1U2CZ',
+            UserPoolId=user_pool_id,
             Username=user_email
         )['UserAttributes']
     attr_dict = {d["Name"]: d["Value"] for d in cognitoAttr}

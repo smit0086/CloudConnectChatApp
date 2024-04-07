@@ -341,44 +341,44 @@ Resources:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 
   DemoPoolIac:
-      Type: AWS::Cognito::UserPool
-      Properties:
-        UserPoolName: "demo-pool-iac"
-        Policies:
-          PasswordPolicy:
-            MinimumLength: 8
-            RequireUppercase: true
-            RequireLowercase: true
-            RequireNumbers: true
-            RequireSymbols: true
-        Schema:
-          - Name: name
-            Required: true
-            Mutable: true
-          - Name: email
-            Required: true
-            Mutable: true
-            AttributeDataType: String
-            DeveloperOnlyAttribute: false
-            StringAttributeConstraints:
-              MinLength: "0"
-              MaxLength: "2048"
-        AutoVerifiedAttributes:
-          - email
-        EmailVerificationSubject: "Your verification code"
-        EmailVerificationMessage: "Your verification code is {####}."
-        AccountRecoverySetting:
-          RecoveryMechanisms:
-            - Name: verified_email
-              Priority: 1
-        UsernameAttributes:
-          - email
-        AdminCreateUserConfig:
-          AllowAdminCreateUserOnly: false
-          InviteMessageTemplate:
-            EmailMessage: "Your username is {username} and temporary password is {####}."
-            EmailSubject: "Your temporary password"
-        MfaConfiguration: "OFF"
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: "demo-pool-iac"
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: true
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+      Schema:
+        - Name: name
+          Required: true
+          Mutable: true
+        - Name: email
+          Required: true
+          Mutable: true
+          AttributeDataType: String
+          DeveloperOnlyAttribute: false
+          StringAttributeConstraints:
+            MinLength: "0"
+            MaxLength: "2048"
+      AutoVerifiedAttributes:
+        - email
+      EmailVerificationSubject: "Your verification code"
+      EmailVerificationMessage: "Your verification code is {####}."
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+      UsernameAttributes:
+        - email
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: false
+        InviteMessageTemplate:
+          EmailMessage: "Your username is {username} and temporary password is {####}."
+          EmailSubject: "Your temporary password"
+      MfaConfiguration: "OFF"
 
   DemoAppClient:
     Type: AWS::Cognito::UserPoolClient
@@ -422,6 +422,11 @@ Resources:
       Layers:
         - !Ref LambdaDependencyLayer
       Role: !GetAtt GetFriendsLambdaRole.Arn
+      Environment:
+        Variables:
+          USER_POOL_ID: !Ref DemoPoolIac
+          REGION: !Sub "${AWS::Region}"
+          APP_CLIENT_ID: !Ref DemoAppClient
 
   getChatMessages:
     Type: AWS::Lambda::Function
@@ -435,6 +440,11 @@ Resources:
       Layers:
         - !Ref LambdaDependencyLayer
       Role: !GetAtt GetChatMessagesRole.Arn
+      Environment:
+        Variables:
+          USER_POOL_ID: !Ref DemoPoolIac
+          REGION: !Sub "${AWS::Region}"
+          APP_CLIENT_ID: !Ref DemoAppClient
 
   getChatMessagesLambdaPermissionApiGateway:
     Type: AWS::Lambda::Permission
@@ -456,6 +466,11 @@ Resources:
       Layers:
         - !Ref LambdaDependencyLayer
       Role: !GetAtt SendMessageLambdaRole.Arn
+      Environment:
+        Variables:
+          USER_POOL_ID: !Ref DemoPoolIac
+          REGION: !Sub "${AWS::Region}"
+          APP_CLIENT_ID: !Ref DemoAppClient
 
   sendMessageLambdaPermissionApiGateway:
     Type: AWS::Lambda::Permission
@@ -477,6 +492,11 @@ Resources:
       Layers:
         - !Ref LambdaDependencyLayer
       Role: !GetAtt AddFriendLambdaRole.Arn
+      Environment:
+        Variables:
+          USER_POOL_ID: !Ref DemoPoolIac
+          REGION: !Sub "${AWS::Region}"
+          APP_CLIENT_ID: !Ref DemoAppClient
 
   addFriendLambdaPermissionApiGateway:
     Type: AWS::Lambda::Permission
@@ -498,6 +518,11 @@ Resources:
       Layers:
         - !Ref LambdaDependencyLayer
       Role: !GetAtt GetUserDetailsRole.Arn
+      Environment:
+        Variables:
+          USER_POOL_ID: !Ref DemoPoolIac
+          REGION: !Sub "${AWS::Region}"
+          APP_CLIENT_ID: !Ref DemoAppClient
 
   getUserDetailsLambdaPermissionApiGateway:
     Type: AWS::Lambda::Permission
@@ -519,6 +544,11 @@ Resources:
       Layers:
         - !Ref LambdaDependencyLayer
       Role: !GetAtt UploadProfilePictureLambdaRole.Arn
+      Environment:
+        Variables:
+          USER_POOL_ID: !Ref DemoPoolIac
+          REGION: !Sub "${AWS::Region}"
+          APP_CLIENT_ID: !Ref DemoAppClient
 
   addProfilePictureLambdaPermissionApiGateway:
     Type: AWS::Lambda::Permission
@@ -540,6 +570,11 @@ Resources:
       Layers:
         - !Ref LambdaDependencyLayer
       Role: !GetAtt GetTranslationLangsLambdaRole.Arn
+      Environment:
+        Variables:
+          USER_POOL_ID: !Ref DemoPoolIac
+          REGION: !Sub "${AWS::Region}"
+          APP_CLIENT_ID: !Ref DemoAppClient
 
   getTranslationLangsLambdaPermissionApiGateway:
     Type: AWS::Lambda::Permission
@@ -561,6 +596,11 @@ Resources:
       Layers:
         - !Ref LambdaDependencyLayer
       Role: !GetAtt TranslateTextLambdaRole.Arn
+      Environment:
+        Variables:
+          USER_POOL_ID: !Ref DemoPoolIac
+          REGION: !Sub "${AWS::Region}"
+          APP_CLIENT_ID: !Ref DemoAppClient
 
   translateTextLambdaPermissionApiGateway:
     Type: AWS::Lambda::Permission
@@ -582,6 +622,11 @@ Resources:
       Layers:
         - !Ref LambdaDependencyLayer
       Role: !GetAtt ConnectDisconnectSocketLambdaRole.Arn
+      Environment:
+        Variables:
+          USER_POOL_ID: !Ref DemoPoolIac
+          REGION: !Sub "${AWS::Region}"
+          APP_CLIENT_ID: !Ref DemoAppClient
 
   disconnectWebSocket:
     Type: AWS::Lambda::Function
@@ -595,6 +640,11 @@ Resources:
       Layers:
         - !Ref LambdaDependencyLayer
       Role: !GetAtt ConnectDisconnectSocketLambdaRole.Arn
+      Environment:
+        Variables:
+          USER_POOL_ID: !Ref DemoPoolIac
+          REGION: !Sub "${AWS::Region}"
+          APP_CLIENT_ID: !Ref DemoAppClient
 
   registerWebSocket:
     Type: AWS::Lambda::Function
@@ -603,11 +653,16 @@ Resources:
       Handler: "registerWebSocket.lambda_handler"  # Update this based on your function's entry point
       Runtime: python3.8
       Code:
-        S3Bucket: "`term-project-lamdas`"  # Replace with your actual bucket name
+        S3Bucket: "term-project-lamdas"  # Replace with your actual bucket name
         S3Key: "functions/registerWebSocket.zip"  # Replace with the actual S3 key
       Layers:
         - !Ref LambdaDependencyLayer
       Role: !GetAtt ConnectDisconnectSocketLambdaRole.Arn
+      Environment:
+        Variables:
+          USER_POOL_ID: !Ref DemoPoolIac
+          REGION: !Sub "${AWS::Region}"
+          APP_CLIENT_ID: !Ref DemoAppClient
 
   ChatResource:
     Type: AWS::ApiGateway::Resource

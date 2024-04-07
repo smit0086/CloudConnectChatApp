@@ -15,9 +15,9 @@ def get_public_key(token, user_pool_id, region):
     return jwk.construct(key) if key else None
 
 def verify_token(token):
-    user_pool_id='us-east-1_WC5D1U2CZ'
-    app_client_id='25ir8q2ji7jt9abs11ulpvlrqi'
-    region='us-east-1'
+    user_pool_id=os.environ['USER_POOL_ID']
+    app_client_id=os.environ['APP_CLIENT_ID']
+    region=os.environ['REGION']
     public_key = get_public_key(token, user_pool_id, region)
     message, encoded_signature = token.rsplit('.', 1)
     decoded_signature = base64url_decode(encoded_signature.encode('utf-8'))
