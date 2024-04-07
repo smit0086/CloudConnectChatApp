@@ -24,6 +24,7 @@ frontend-build-job:
   services:
     - docker:dind
   script:
+    - cd frontend
     - docker build -t $DOCKER_IMAGE_NAME .
     - docker tag $DOCKER_IMAGE_NAME:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$DOCKER_IMAGE_NAME:latest
     - $(aws ecr get-login --no-include-email --region $AWS_REGION)
