@@ -19,10 +19,12 @@ import { Button, ButtonBase, Dialog, DialogActions, DialogContent, DialogContent
 import { useChatSockets } from "../../hooks/useChatSockets";
 import { Add } from "@mui/icons-material";
 import { useState } from "react";
+import { useTranslation } from "../../hooks/useTranslation";
 
 const ChatScreen = () => {
     const { friends, areFriendsLoading, friendsMap, addFriend, isFriendAdding } = useFriends();
     const { user } = useAuth();
+    const {translationLanguages, isTranslationLanguagesLoading} = useTranslation();
 
     const [open, setOpen] = useState(false);
 
@@ -74,7 +76,7 @@ const ChatScreen = () => {
                 </DialogActions>
             </Dialog>
             <StyledChatListContainer>
-                {areFriendsLoading ? (
+                {areFriendsLoading || isTranslationLanguagesLoading ? (
                     <div>Loading...</div>
                 ) : (
                     <>
@@ -123,7 +125,7 @@ const ChatScreen = () => {
                 <Switch>
                     <Route exact path="/chat"></Route>
                     <Route path="/chat/:chatId">
-                        <ChatDetails friendsMap={friendsMap} />
+                        <ChatDetails friendsMap={friendsMap} translationLanguages={translationLanguages}/>
                     </Route>
                 </Switch>
             </StyledActiveChatContainer>

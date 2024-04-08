@@ -11,6 +11,7 @@ import { useProfile } from "../../hooks/useProfile";
 
 interface ChatDetailsProps {
     friendsMap: FriendResponse | undefined;
+    translationLanguages: any;
 }
 const ChatDetails: React.FC<ChatDetailsProps> = (props) => {
     const { chatId } = useParams<{
@@ -43,6 +44,7 @@ const ChatDetails: React.FC<ChatDetailsProps> = (props) => {
                                     isCurrentUser={chat.sender === user?.email}
                                     senderAvatar={chat.sender === user?.email ? userDetails?.avatarURL || "" : friendDetails?.avatarURL || ""}
                                     senderName={chat.sender === user?.email ? user?.name : friendDetails?.attr.name || ""}
+                                    translationLanguages={props.translationLanguages}
                                 />
                             ))
                         }

@@ -9,11 +9,20 @@ def lambda_handler(event, context):
     print(event)
     claims = verify_token.verify_token(token)
     if claims is None:
-        return {'statusCode': 400, 'body': json.dumps('Token verification failed.')}
+        return {'statusCode': 400,'headers': {
+                "Access-Control-Allow-Headers" : "Content-Type",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "*" 
+            }, 'body': json.dumps('Token verification failed.')}
 
     response = translate.list_languages()
 
     return {
         'statusCode': 200,
+        'headers': {
+                "Access-Control-Allow-Headers" : "Content-Type",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "*" 
+            },
         'body': json.dumps(response)
     }
