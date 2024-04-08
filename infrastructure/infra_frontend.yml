@@ -1,0 +1,64 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: AWS Elastic Beanstalk Docker Environment
+
+Parameters:
+  ApplicationName:
+    Type: String
+    Description: Name of the Elastic Beanstalk Application
+  EnvironmentName:
+    Type: String
+    Description: Name of the Elastic Beanstalk Environment
+  DockerImage:
+    Type: String
+    Description: Full URL of the Docker image in ECR (e.g., 123456789012.dkr.ecr.region.amazonaws.com/my-repository:my-tag)
+
+Resources:
+  ElasticBeanstalkApplication:
+    Type: AWS::ElasticBeanstalk::Application
+    Properties:
+      ApplicationName: !Ref ApplicationName
+
+  ElasticBeanstalkApplicationVersion:
+    Type: AWS::ElasticBeanstalk::ApplicationVersion
+    Properties:
+      ApplicationName: !Ref ApplicationName
+      Description: AWS ElasticBeanstalk Sample Application Version
+      SourceBundle:
+        S3Bucket: "term-project-lamdas"
+        S3Key: "beanstalk/Dockerrun.aws.json"
+    DependsOn: ElasticBeanstalkApplication
+  
+  ElasticBeanstalkConfigurationTemplate:
+    Type: AWS::ElasticBeanstalk::ConfigurationTemplate
+    Properties:
+      ApplicationName: !Ref ApplicationName
+      SolutionStackName: 64bit Amazon Linux 2023 v4.3.0 running Docker
+      OptionSettings:
+        - Namespace: aws:autoscaling:launchconfiguration
+          OptionName: InstanceType
+          Value: t2.micro
+        - Namespace: aws:autoscaling:launchconfiguration
+          OptionName: IamInstanceProfile
+          Value: aws-elasticbeanstalk-ec2-role
+        - Namespace: aws:elasticbeanstalk:environment
+          OptionName: EnvironmentType
+          Value: SingleInstance
+    DependsOn: ElasticBeanstalkApplicationVersion
+      
+
+  ElasticBeanstalkEnvironment:
+    Type: AWS::ElasticBeanstalk::Environment
+    Properties:
+      ApplicationName: !Ref ApplicationName
+      EnvironmentName: !Ref EnvironmentName
+      TemplateName: !Ref ElasticBeanstalkConfigurationTemplate
+      VersionLabel: !Ref ElasticBeanstalkApplicationVersion
+    DependsOn: 
+      - ElasticBeanstalkApplication
+      - ElasticBeanstalkApplicationVersion
+      - ElasticBeanstalkConfigurationTemplate
+
+Outputs:
+  EnvironmentURL:
+    Description: URL of the Elastic Beanstalk Environment
+    Value: !GetAtt ElasticBeanstalkEnvironment.EndpointURL

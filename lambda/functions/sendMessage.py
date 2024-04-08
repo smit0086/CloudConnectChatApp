@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 
 dynamodb = boto3.resource('dynamodb')
 client = boto3.client('apigatewaymanagementapi', endpoint_url="https://71wzcbif8b.execute-api.us-east-1.amazonaws.com/dev")
+sns = boto3.client("sns")
 
 def sort_strings(str1, str2):
     if str1 < str2:
@@ -76,7 +77,15 @@ def lambda_handler(event, context):
     for friendConnection in responseFriendsConnections['Items']:
         connection_id = friendConnection['connectionId']
         client.post_to_connection(ConnectionId=connection_id, Data=json.dumps(message).encode('utf-8'))
-        
+
+    snsTopic = os.environ['SNS_TOPIC']
+    snsResponse = sns.publish(
+            TopicArn="arn:aws:sns:us-east-1:975050088808:NewMessage",
+            Message=json.dumps({
+                "to": friend_email,
+                "from": user_email
+            })
+    )
     return {
             'statusCode': 200,
             'headers': {

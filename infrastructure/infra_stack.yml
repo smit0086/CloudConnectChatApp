@@ -59,6 +59,16 @@ Resources:
           KeyType: HASH
       BillingMode: PAY_PER_REQUEST
 
+  NewMessageTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: NewMessage
+
+  SESEmailIdentity:
+    Type: AWS::SES::EmailIdentity
+    Properties:
+      EmailAddress: smitpatel0045@gmail.com
+
   AddFriendLambdaRole:
     Type: AWS::IAM::Role
     Properties:
@@ -211,6 +221,26 @@ Resources:
         - arn:aws:iam::aws:policy/AmazonCognitoReadOnly
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 
+  SendUserNotificationEmailsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: SendUserNotificationEmailsRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: SendEmailPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: ses:SendEmail
+                Resource: !GetAtt SESEmailIdentity.Arn
+
   SendMessageLambdaRole:
     Type: AWS::IAM::Role
     Properties:
@@ -244,6 +274,15 @@ Resources:
                   - dynamodb:UpdateItem
                 Resource:
                   - !GetAtt ChatsTable.Arn
+        - PolicyName: PublishNewMessageTopic
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource:
+                  - !GetAtt NewMessageTopic.Arn
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonAPIGatewayInvokeFullAccess
         - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
@@ -471,6 +510,22 @@ Resources:
           USER_POOL_ID: !Ref DemoPoolIac
           REGION: !Sub "${AWS::Region}"
           APP_CLIENT_ID: !Ref DemoAppClient
+
+  sendUserNotificationEmails:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: sendUserNotificationEmails_iac
+      Handler: sendUserNotificationEmails.lambda_handler
+      Role: !GetAtt SendUserNotificationEmailsRole.Arn
+      Runtime: python3.8
+      Code:
+        S3Bucket: "term-project-lamdas"  # Replace with your actual bucket name
+        S3Key: "functions/sendUserNotificationEmails.zip"  # Replace with the actual S3 key
+      Events:
+        SnsTrigger:
+          Type: SNS
+          Properties:
+            Topic: !Ref NewMessageTopic
 
   sendMessageLambdaPermissionApiGateway:
     Type: AWS::Lambda::Permission
