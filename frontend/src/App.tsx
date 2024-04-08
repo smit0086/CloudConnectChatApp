@@ -5,34 +5,37 @@ import UnauthenticatedOnlyRoute from "./components/authn/UnauthenticatedOnlyRout
 import LoginPage from "./pages/LoginPage";
 import Layout from "./components/layout/Layout";
 import ChatScreen from "./screens/Chat/ChatScreen";
-import { useChatSockets } from "./hooks/useChatSockets";
 import Profile from "./screens/Profile/Profile";
 import SignupPage from "./pages/SignupPage";
+import CustomSnackbarProvider from "./components/ui/CustomSnackbarProvider/CustomSnackbarProvider";
 
 function App() {
     return (
         <AuthProvider>
-            <BrowserRouter>
-                <Switch>
-                    <UnauthenticatedOnlyRoute path="/login">
-                        <LoginPage />
-                    </UnauthenticatedOnlyRoute>
-                    <UnauthenticatedOnlyRoute path="/signup">
-                        <SignupPage />
-                    </UnauthenticatedOnlyRoute>
-                    <Layout>
-                        <AuthenticatedRoute path="/" exact={true}>
-                            <Redirect to={"/chat"} /> 
-                        </AuthenticatedRoute>
-                        <AuthenticatedRoute path="/chat" exact={false}>
-                            <ChatScreen />
-                        </AuthenticatedRoute>
-                        <AuthenticatedRoute path="/profile">
-                            <Profile />
-                        </AuthenticatedRoute>
-                    </Layout>
-                </Switch>
-            </BrowserRouter>
+                <BrowserRouter>
+                    <Switch>
+                        <UnauthenticatedOnlyRoute path="/login">
+                            <LoginPage />
+                        </UnauthenticatedOnlyRoute>
+                        <UnauthenticatedOnlyRoute path="/signup">
+                            <SignupPage />
+                        </UnauthenticatedOnlyRoute>
+                        <Layout>
+            <CustomSnackbarProvider>
+
+                            <AuthenticatedRoute path="/" exact={true}>
+                                <Redirect to={"/chat"} />
+                            </AuthenticatedRoute>
+                            <AuthenticatedRoute path="/chat" exact={false}>
+                                <ChatScreen />
+                            </AuthenticatedRoute>
+                            <AuthenticatedRoute path="/profile">
+                                <Profile />
+                            </AuthenticatedRoute>
+            </CustomSnackbarProvider>
+                        </Layout>
+                    </Switch>
+                </BrowserRouter>
         </AuthProvider>
     );
 }

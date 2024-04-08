@@ -2,7 +2,7 @@ import { useMutation, useQuery } from "@tanstack/react-query"
 import { useAuth } from "./useAuth"
 import { getUserDetails, updateProfile } from "../service/profileService";
 
-export const useProfile = () => {
+export const useProfile = (updateProfileCallback) => {
     const {getIdToken} = useAuth();
     const data = useQuery({
         queryKey: ["profile"],
@@ -18,6 +18,13 @@ export const useProfile = () => {
         },
         onSettled: () => {
             data.refetch();
+        },
+        onError: (error: any) => {
+            console.log(error);
+            updateProfileCallback(false, error);
+        },
+        onSuccess: () => {
+            updateProfileCallback(true);
         }
     })
     return {
