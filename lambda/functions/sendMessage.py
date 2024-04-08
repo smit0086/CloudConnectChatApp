@@ -1,4 +1,5 @@
 import json
+import os
 import verify_token
 import boto3
 from boto3.dynamodb.conditions import Key
@@ -80,7 +81,7 @@ def lambda_handler(event, context):
 
     snsTopic = os.environ['SNS_TOPIC']
     snsResponse = sns.publish(
-            TopicArn="arn:aws:sns:us-east-1:975050088808:NewMessage",
+            TopicArn=snsTopic,
             Message=json.dumps({
                 "to": friend_email,
                 "from": user_email

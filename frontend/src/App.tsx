@@ -7,6 +7,7 @@ import Layout from "./components/layout/Layout";
 import ChatScreen from "./screens/Chat/ChatScreen";
 import { useChatSockets } from "./hooks/useChatSockets";
 import Profile from "./screens/Profile/Profile";
+import SignupPage from "./pages/SignupPage";
 
 function App() {
     return (
@@ -15,6 +16,9 @@ function App() {
                 <Switch>
                     <UnauthenticatedOnlyRoute path="/login">
                         <LoginPage />
+                    </UnauthenticatedOnlyRoute>
+                    <UnauthenticatedOnlyRoute path="/signup">
+                        <SignupPage />
                     </UnauthenticatedOnlyRoute>
                     <Layout>
                         <AuthenticatedRoute path="/" exact={true}>

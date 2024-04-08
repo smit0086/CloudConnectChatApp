@@ -1,7 +1,7 @@
 import {Auth as CognitoAuth} from '@aws-amplify/auth';
 import {Hub, HubCallback} from '@aws-amplify/core';
 import {CognitoUser} from 'amazon-cognito-identity-js';
-import {createContext, ReactNode, useContext, useState} from 'react';
+import {createContext, ReactNode, useContext, useRef, useState} from 'react';
 import useAsyncEffect from 'use-async-effect';
 
 CognitoAuth.configure({
@@ -95,6 +95,7 @@ type CognitoUserWithChallenge = CognitoUser & {
 function useProvideAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [authInProgress, setAuthInProgress] = useState(true);
+  const [signupUserStatus, setSignupUserStatus] = useState<string>('init');
 
   /** Sign-in using email and password. */
   async function logIn(
@@ -132,23 +133,33 @@ function useProvideAuth() {
         email,
         password,
         name,
-        country,
-      }: Credentials & Exclude<User, 'id'>
+      }: any
   ): Promise<User | null> {
     const result = await CognitoAuth.signUp({
       username: email,
       password,
       attributes: {
         name,
-        'custom:country': country,
       },
     });
+    console.log({result})
     if (result.user != null && result.userConfirmed) {
-      setUser(await cognitoUserToUser(result.user));
+    setSignupUserStatus('confirmed');
+    setUser(await cognitoUserToUser(result.user));
       return user;
     }
+    setSignupUserStatus('unconfirmed');
     setUser(null);
     return null;
+  }
+
+  async function confirmCode(code: string, email: string) {
+    const result = await CognitoAuth.confirmSignUp(email, code);
+    if (result === 'SUCCESS') {
+      setSignupUserStatus('confirmed');
+      return true;
+    }
+    return false;
   }
 
   /**
@@ -205,6 +216,8 @@ function useProvideAuth() {
   return {
     user,
     inProgress: authInProgress,
+    signupUserStatus,
+    confirmCode,
     logIn,
     logOut,
     signUp,

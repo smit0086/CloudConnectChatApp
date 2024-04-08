@@ -64,11 +64,6 @@ Resources:
     Properties:
       TopicName: NewMessage
 
-  SESEmailIdentity:
-    Type: AWS::SES::EmailIdentity
-    Properties:
-      EmailAddress: smitpatel0045@gmail.com
-
   AddFriendLambdaRole:
     Type: AWS::IAM::Role
     Properties:
@@ -239,7 +234,7 @@ Resources:
             Statement:
               - Effect: Allow
                 Action: ses:SendEmail
-                Resource: !GetAtt SESEmailIdentity.Arn
+                Resource: !Sub "arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/smitpatel0045@gmail.com"
 
   SendMessageLambdaRole:
     Type: AWS::IAM::Role
@@ -282,11 +277,12 @@ Resources:
                 Action:
                   - sns:Publish
                 Resource:
-                  - !GetAtt NewMessageTopic.Arn
+                  -   !Ref NewMessageTopic
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonAPIGatewayInvokeFullAccess
         - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+    DependsOn: NewMessageTopic
 
   TranslateTextLambdaRole:
     Type: AWS::IAM::Role
@@ -510,6 +506,7 @@ Resources:
           USER_POOL_ID: !Ref DemoPoolIac
           REGION: !Sub "${AWS::Region}"
           APP_CLIENT_ID: !Ref DemoAppClient
+          SNS_TOPIC: !Ref NewMessageTopic
 
   sendUserNotificationEmails:
     Type: AWS::Lambda::Function
@@ -521,11 +518,21 @@ Resources:
       Code:
         S3Bucket: "term-project-lamdas"  # Replace with your actual bucket name
         S3Key: "functions/sendUserNotificationEmails.zip"  # Replace with the actual S3 key
-      Events:
-        SnsTrigger:
-          Type: SNS
-          Properties:
-            Topic: !Ref NewMessageTopic
+
+  SnsSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref NewMessageTopic
+      Protocol: lambda
+      Endpoint: !GetAtt sendUserNotificationEmails.Arn
+
+  sendMessageLambdaPermissionSns:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt sendUserNotificationEmails.Arn
+      Action: "lambda:InvokeFunction"
+      Principal: "sns.amazonaws.com"
+      SourceArn: !Ref NewMessageTopic
 
   sendMessageLambdaPermissionApiGateway:
     Type: AWS::Lambda::Permission
