@@ -1,4 +1,4 @@
-import { getMethod } from "../utils/utilts";
+import { getMethod, postMethod } from "../utils/utilts";
 import { defaultAvatarURL } from "./profileService";
 
 export interface FriendResponse {
@@ -30,3 +30,17 @@ export const getFriends = async (token: string) => {
     }
     return response;
 };
+
+
+export const addFriend = async (email: string, token: string) => {
+    const body = {
+        email: email,
+    }
+    await postMethod(
+        `${import.meta.env.VITE__SERVER_ADDRESS}/friends/add`,
+        body,
+        true,
+        token
+    );
+    return true;
+}

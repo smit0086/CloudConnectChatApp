@@ -39,7 +39,11 @@ def lambda_handler(event, context):
     print("event, ",event)
     claims = verify_token.verify_token(token)
     if claims is None:
-        return {'statusCode': 400, 'body': json.dumps('Token verification failed.')}
+        return {'statusCode': 400,'headers': {
+                "Access-Control-Allow-Headers" : "Content-Type",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "*" 
+            }, 'body': json.dumps('Token verification failed.')}
 
     user_email = claims['email']
     friend_email = json.loads(event['body'])['email']
@@ -47,11 +51,20 @@ def lambda_handler(event, context):
     try:
         part1 = add_friend(user_email, friend_email)
         part2 = add_friend(friend_email, user_email)
-        return {'statusCode': 200, 'body': json.dumps({"message": "Friend added successfully"})}
+        return {'statusCode': 200, 'headers': {
+                "Access-Control-Allow-Headers" : "Content-Type",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "*" 
+            }, 'body': json.dumps({"message": "Friend added successfully"})}
     except Exception as e:
         print(e)
         return {
             "statusCode": 400,
+            'headers': {
+                "Access-Control-Allow-Headers" : "Content-Type",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "*" 
+            },
             "body": json.dumps({
                 "message": str(e)
             })

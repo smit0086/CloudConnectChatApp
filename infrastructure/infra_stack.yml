@@ -462,6 +462,7 @@ Resources:
           USER_POOL_ID: !Ref DemoPoolIac
           REGION: !Sub "${AWS::Region}"
           APP_CLIENT_ID: !Ref DemoAppClient
+      Timeout: 900
 
   getChatMessages:
     Type: AWS::Lambda::Function
@@ -480,6 +481,7 @@ Resources:
           USER_POOL_ID: !Ref DemoPoolIac
           REGION: !Sub "${AWS::Region}"
           APP_CLIENT_ID: !Ref DemoAppClient
+      Timeout: 900
 
   getChatMessagesLambdaPermissionApiGateway:
     Type: AWS::Lambda::Permission
@@ -488,6 +490,112 @@ Resources:
       FunctionName: !Ref getChatMessages
       Principal: "apigateway.amazonaws.com"
       SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${TermProjectRestApiGateway}/*"
+
+  TermProjectWebSocketApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: "term_project_websockets_iac"
+      ProtocolType: WEBSOCKET
+      RouteSelectionExpression: "$request.body.action"
+
+  ConnectRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref TermProjectWebSocketApi
+      RouteKey: "$connect"
+      AuthorizationType: NONE
+      Target: !Join 
+        - "/"
+        - - "integrations"
+          - !Ref ConnectWebSocketIntegration
+
+  DisconnectRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref TermProjectWebSocketApi
+      RouteKey: "$disconnect"
+      AuthorizationType: NONE
+      Target: !Join 
+        - "/"
+        - - "integrations"
+          - !Ref DisconnectWebSocketIntegration
+
+  RegisterTokenRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref TermProjectWebSocketApi
+      RouteKey: "registerToken"
+      AuthorizationType: NONE
+      Target: !Join 
+        - "/"
+        - - "integrations"
+          - !Ref RegisterWebSocketIntegration
+
+  ConnectWebSocketIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref TermProjectWebSocketApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Sub 
+        - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaArn}/invocations"
+        - LambdaArn: !GetAtt connectWebSocket.Arn
+
+  DisconnectWebSocketIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref TermProjectWebSocketApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Sub 
+        - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaArn}/invocations"
+        - LambdaArn: !GetAtt disconnectWebSocket.Arn
+
+  RegisterWebSocketIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref TermProjectWebSocketApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Sub 
+        - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaArn}/invocations"
+        - LambdaArn: !GetAtt registerWebSocket.Arn
+
+  ConnectWebSocketPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt connectWebSocket.Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${TermProjectWebSocketApi}/*"
+
+  DisconnectWebSocketPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt disconnectWebSocket.Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${TermProjectWebSocketApi}/*"
+
+  RegisterWebSocketPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt registerWebSocket.Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${TermProjectWebSocketApi}/*"
+
+
+  WebSocketApiStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref TermProjectWebSocketApi
+      StageName: "dev"
+      AutoDeploy: true
+    DependsOn:
+      - ConnectRoute
+      - DisconnectRoute
+      - RegisterTokenRoute
+      - ConnectWebSocketPermission
+      - DisconnectWebSocketPermission
+      - RegisterWebSocketPermission
 
   sendMessage:
     Type: AWS::Lambda::Function
@@ -507,6 +615,8 @@ Resources:
           REGION: !Sub "${AWS::Region}"
           APP_CLIENT_ID: !Ref DemoAppClient
           SNS_TOPIC: !Ref NewMessageTopic
+          SOCKET_ADDRESS: !Sub "https://${TermProjectWebSocketApi}.execute-api.${AWS::Region}.amazonaws.com/dev"
+      Timeout: 900
 
   sendUserNotificationEmails:
     Type: AWS::Lambda::Function
@@ -518,6 +628,7 @@ Resources:
       Code:
         S3Bucket: "term-project-lamdas"  # Replace with your actual bucket name
         S3Key: "functions/sendUserNotificationEmails.zip"  # Replace with the actual S3 key
+      Timeout: 900
 
   SnsSubscription:
     Type: AWS::SNS::Subscription
@@ -559,6 +670,7 @@ Resources:
           USER_POOL_ID: !Ref DemoPoolIac
           REGION: !Sub "${AWS::Region}"
           APP_CLIENT_ID: !Ref DemoAppClient
+      Timeout: 900
 
   addFriendLambdaPermissionApiGateway:
     Type: AWS::Lambda::Permission
@@ -585,6 +697,7 @@ Resources:
           USER_POOL_ID: !Ref DemoPoolIac
           REGION: !Sub "${AWS::Region}"
           APP_CLIENT_ID: !Ref DemoAppClient
+      Timeout: 900
 
   getUserDetailsLambdaPermissionApiGateway:
     Type: AWS::Lambda::Permission
@@ -611,6 +724,7 @@ Resources:
           USER_POOL_ID: !Ref DemoPoolIac
           REGION: !Sub "${AWS::Region}"
           APP_CLIENT_ID: !Ref DemoAppClient
+      Timeout: 900
 
   addProfilePictureLambdaPermissionApiGateway:
     Type: AWS::Lambda::Permission
@@ -637,6 +751,7 @@ Resources:
           USER_POOL_ID: !Ref DemoPoolIac
           REGION: !Sub "${AWS::Region}"
           APP_CLIENT_ID: !Ref DemoAppClient
+      Timeout: 900
 
   getTranslationLangsLambdaPermissionApiGateway:
     Type: AWS::Lambda::Permission
@@ -663,6 +778,7 @@ Resources:
           USER_POOL_ID: !Ref DemoPoolIac
           REGION: !Sub "${AWS::Region}"
           APP_CLIENT_ID: !Ref DemoAppClient
+      Timeout: 900
 
   translateTextLambdaPermissionApiGateway:
     Type: AWS::Lambda::Permission
@@ -689,6 +805,7 @@ Resources:
           USER_POOL_ID: !Ref DemoPoolIac
           REGION: !Sub "${AWS::Region}"
           APP_CLIENT_ID: !Ref DemoAppClient
+      Timeout: 900
 
   disconnectWebSocket:
     Type: AWS::Lambda::Function
@@ -707,6 +824,7 @@ Resources:
           USER_POOL_ID: !Ref DemoPoolIac
           REGION: !Sub "${AWS::Region}"
           APP_CLIENT_ID: !Ref DemoAppClient
+      Timeout: 900
 
   registerWebSocket:
     Type: AWS::Lambda::Function
@@ -725,6 +843,7 @@ Resources:
           USER_POOL_ID: !Ref DemoPoolIac
           REGION: !Sub "${AWS::Region}"
           APP_CLIENT_ID: !Ref DemoAppClient
+      Timeout: 900
 
   ChatResource:
     Type: AWS::ApiGateway::Resource
@@ -1151,109 +1270,3 @@ Resources:
       - TranslationLanguagesOptions
       - TranslationTranslatePost
       - TranslationTranslateOptions
-
-  TermProjectWebSocketApi:
-    Type: AWS::ApiGatewayV2::Api
-    Properties:
-      Name: "term_project_websockets_iac"
-      ProtocolType: WEBSOCKET
-      RouteSelectionExpression: "$request.body.action"
-
-  ConnectRoute:
-    Type: AWS::ApiGatewayV2::Route
-    Properties:
-      ApiId: !Ref TermProjectWebSocketApi
-      RouteKey: "$connect"
-      AuthorizationType: NONE
-      Target: !Join 
-        - "/"
-        - - "integrations"
-          - !Ref ConnectWebSocketIntegration
-
-  DisconnectRoute:
-    Type: AWS::ApiGatewayV2::Route
-    Properties:
-      ApiId: !Ref TermProjectWebSocketApi
-      RouteKey: "$disconnect"
-      AuthorizationType: NONE
-      Target: !Join 
-        - "/"
-        - - "integrations"
-          - !Ref DisconnectWebSocketIntegration
-
-  RegisterTokenRoute:
-    Type: AWS::ApiGatewayV2::Route
-    Properties:
-      ApiId: !Ref TermProjectWebSocketApi
-      RouteKey: "registerToken"
-      AuthorizationType: NONE
-      Target: !Join 
-        - "/"
-        - - "integrations"
-          - !Ref RegisterWebSocketIntegration
-
-  ConnectWebSocketIntegration:
-    Type: AWS::ApiGatewayV2::Integration
-    Properties:
-      ApiId: !Ref TermProjectWebSocketApi
-      IntegrationType: AWS_PROXY
-      IntegrationUri: !Sub 
-        - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaArn}/invocations"
-        - LambdaArn: !GetAtt connectWebSocket.Arn
-
-  DisconnectWebSocketIntegration:
-    Type: AWS::ApiGatewayV2::Integration
-    Properties:
-      ApiId: !Ref TermProjectWebSocketApi
-      IntegrationType: AWS_PROXY
-      IntegrationUri: !Sub 
-        - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaArn}/invocations"
-        - LambdaArn: !GetAtt disconnectWebSocket.Arn
-
-  RegisterWebSocketIntegration:
-    Type: AWS::ApiGatewayV2::Integration
-    Properties:
-      ApiId: !Ref TermProjectWebSocketApi
-      IntegrationType: AWS_PROXY
-      IntegrationUri: !Sub 
-        - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaArn}/invocations"
-        - LambdaArn: !GetAtt registerWebSocket.Arn
-
-  ConnectWebSocketPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !GetAtt connectWebSocket.Arn
-      Principal: apigateway.amazonaws.com
-      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${TermProjectWebSocketApi}/*"
-
-  DisconnectWebSocketPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !GetAtt disconnectWebSocket.Arn
-      Principal: apigateway.amazonaws.com
-      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${TermProjectWebSocketApi}/*"
-
-  RegisterWebSocketPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !GetAtt registerWebSocket.Arn
-      Principal: apigateway.amazonaws.com
-      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${TermProjectWebSocketApi}/*"
-
-
-  WebSocketApiStage:
-    Type: AWS::ApiGatewayV2::Stage
-    Properties:
-      ApiId: !Ref TermProjectWebSocketApi
-      StageName: "dev"
-      AutoDeploy: true
-    DependsOn:
-      - ConnectRoute
-      - DisconnectRoute
-      - RegisterTokenRoute
-      - ConnectWebSocketPermission
-      - DisconnectWebSocketPermission
-      - RegisterWebSocketPermission

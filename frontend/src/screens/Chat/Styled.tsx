@@ -6,7 +6,8 @@ export const StyledChatContainer = styled.div`
 `
 
 export const StyledChatListContainer = styled.div`
-    min-width: 300px;
+    width: 300px;
+
 `
 export const StyledChatList = styled.div`
     margin-top: 16px;

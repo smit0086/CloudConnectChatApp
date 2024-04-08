@@ -7,7 +7,9 @@ import uuid
 from datetime import datetime, timezone
 
 dynamodb = boto3.resource('dynamodb')
-client = boto3.client('apigatewaymanagementapi', endpoint_url="https://71wzcbif8b.execute-api.us-east-1.amazonaws.com/dev")
+socket_address = os.environ['SOCKET_ADDRESS']
+print("socket_address: ", socket_address)
+client = boto3.client('apigatewaymanagementapi', endpoint_url=socket_address)
 sns = boto3.client("sns")
 
 def sort_strings(str1, str2):

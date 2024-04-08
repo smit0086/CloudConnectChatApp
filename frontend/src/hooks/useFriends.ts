@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query"
-import { getFriends } from "../service/friendsService"
+import { useMutation, useQuery } from "@tanstack/react-query"
+import { addFriend, getFriends } from "../service/friendsService"
 import { useAuth } from "./useAuth";
 
 interface Friend {
@@ -28,6 +28,16 @@ export const useFriends = () => {
         queryKey: ['friends'],
         queryFn: fetchFriends
     })
+
+    const {mutateAsync, isPending} = useMutation({
+        mutationFn: async (email: string) => {
+            const token = await getIdToken();
+            return await addFriend(email, token);
+        },
+        onSettled: () => {
+            query.refetch();
+        }
+    })
     
     let friends: Friend[] = [];
     if(query.data) {
@@ -51,5 +61,7 @@ export const useFriends = () => {
         friends,
         friendsMap: query.data,
         areFriendsLoading: query.isLoading,
+        addFriend: mutateAsync,
+        isFriendAdding: isPending
     }
 }
