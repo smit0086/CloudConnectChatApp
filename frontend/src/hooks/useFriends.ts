@@ -14,7 +14,7 @@ interface Friend {
         sender: string;
     }
 }
-export const useFriends = () => {
+export const useFriends = (addFriendCallback) => {
 
     const {getIdToken} = useAuth();
 
@@ -36,6 +36,12 @@ export const useFriends = () => {
         },
         onSettled: () => {
             query.refetch();
+        },
+        onError: (error) => {
+            addFriendCallback(false, error);
+        },
+        onSuccess: () => {
+            addFriendCallback(true, null);
         }
     })
     

@@ -8,10 +8,14 @@ import ChatScreen from "./screens/Chat/ChatScreen";
 import Profile from "./screens/Profile/Profile";
 import SignupPage from "./pages/SignupPage";
 import CustomSnackbarProvider from "./components/ui/CustomSnackbarProvider/CustomSnackbarProvider";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 function App() {
-    return (
-        <AuthProvider>
+const queryClient = new QueryClient()
+return (
+    <QueryClientProvider client={queryClient}>
+    <AuthProvider>
+            <CustomSnackbarProvider>
                 <BrowserRouter>
                     <Switch>
                         <UnauthenticatedOnlyRoute path="/login">
@@ -21,7 +25,6 @@ function App() {
                             <SignupPage />
                         </UnauthenticatedOnlyRoute>
                         <Layout>
-            <CustomSnackbarProvider>
 
                             <AuthenticatedRoute path="/" exact={true}>
                                 <Redirect to={"/chat"} />
@@ -32,11 +35,12 @@ function App() {
                             <AuthenticatedRoute path="/profile">
                                 <Profile />
                             </AuthenticatedRoute>
-            </CustomSnackbarProvider>
                         </Layout>
                     </Switch>
                 </BrowserRouter>
+            </CustomSnackbarProvider>
         </AuthProvider>
+        </QueryClientProvider>
     );
 }
 

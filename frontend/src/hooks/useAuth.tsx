@@ -1,5 +1,6 @@
 import {Auth as CognitoAuth} from '@aws-amplify/auth';
 import {Hub, HubCallback} from '@aws-amplify/core';
+import { useQueryClient } from '@tanstack/react-query';
 import {CognitoUser} from 'amazon-cognito-identity-js';
 import {createContext, ReactNode, useContext, useRef, useState} from 'react';
 import useAsyncEffect from 'use-async-effect';
@@ -96,6 +97,7 @@ function useProvideAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [authInProgress, setAuthInProgress] = useState(true);
   const [signupUserStatus, setSignupUserStatus] = useState<string>('init');
+  const queryClient = useQueryClient();
 
   /** Sign-in using email and password. */
   async function logIn(
@@ -120,6 +122,7 @@ function useProvideAuth() {
    */
   async function logOut(global = false) {
     setUser(null);
+    queryClient.clear();
     await CognitoAuth.signOut({global});
   }
 

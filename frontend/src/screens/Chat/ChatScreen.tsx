@@ -15,26 +15,54 @@ import {
     StyledMessagesContainer,
 } from "./Styled";
 import ChatDetails from "../ChatDetails/ChatDetails";
-import { Button, ButtonBase, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, TextField } from "@mui/material";
+import {
+    Button,
+    ButtonBase,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
+    IconButton,
+    TextField,
+    Typography,
+} from "@mui/material";
 import { useChatSockets } from "../../hooks/useChatSockets";
 import { Add } from "@mui/icons-material";
 import { useState } from "react";
 import { useTranslation } from "../../hooks/useTranslation";
+import { useCustomSnackbar } from "../../components/ui/CustomSnackbarProvider/CustomSnackbarProvider";
 
 const ChatScreen = () => {
-    const { friends, areFriendsLoading, friendsMap, addFriend, isFriendAdding } = useFriends();
+    const { show } = useCustomSnackbar();
+    const addFriendCallback = (suceeded: boolean, error: any) => {
+        if (suceeded) {
+            show("Friend added successfully", "success");
+        } else {
+            show("Failed to add friend: ", JSON.stringify(error));
+            console.error("Failed to add friend", error);
+        }
+    };
+    const {
+        friends,
+        areFriendsLoading,
+        friendsMap,
+        addFriend,
+        isFriendAdding,
+    } = useFriends(addFriendCallback);
     const { user } = useAuth();
-    const {translationLanguages, isTranslationLanguagesLoading} = useTranslation();
+    const { translationLanguages, isTranslationLanguagesLoading } =
+        useTranslation();
 
     const [open, setOpen] = useState(false);
 
-  const handleClickOpen = () => {
-    setOpen(true);
-  };
+    const handleClickOpen = () => {
+        setOpen(true);
+    };
 
-  const handleClose = () => {
-    setOpen(false);
-  };
+    const handleClose = () => {
+        setOpen(false);
+    };
     useChatSockets();
 
     console.log(friends);
@@ -45,7 +73,9 @@ const ChatScreen = () => {
                 onClose={handleClose}
                 PaperProps={{
                     component: "form",
-                    onSubmit: async (event: React.FormEvent<HTMLFormElement>) => {
+                    onSubmit: async (
+                        event: React.FormEvent<HTMLFormElement>
+                    ) => {
                         event.preventDefault();
                         const email = (event.target as any).email.value;
                         await addFriend(email);
@@ -72,60 +102,62 @@ const ChatScreen = () => {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleClose}>Cancel</Button>
-                    <Button type="submit">{isFriendAdding ? "Adding...": "Add"}</Button>
+                    <Button type="submit">
+                        {isFriendAdding ? "Adding..." : "Add"}
+                    </Button>
                 </DialogActions>
             </Dialog>
             <StyledChatListContainer>
+                <SearchInput />
+                <Button
+                    style={{ marginTop: "8px" }}
+                    variant="contained"
+                    color="primary"
+                    startIcon={<Add />}
+                    fullWidth
+                    onClick={handleClickOpen}
+                >
+                    Add Friends
+                </Button>
                 {areFriendsLoading || isTranslationLanguagesLoading ? (
-                    <div>Loading...</div>
+                    <Typography variant="body1">loading...</Typography>
                 ) : (
-                    <>
-                        <SearchInput />
-                        <Button
-                            style={{ marginTop: "8px" }}
-                            variant="contained"
-                            color="primary"
-                            startIcon={<Add />}
-                            fullWidth
-                            onClick={handleClickOpen}
-                        >
-                            Add Friends
-                        </Button>
-                        <StyledChatList>
-                            {friends.map((friend) => (
-                                <Link to={`/chat/${friend.email}`}>
-                                    <ButtonBase>
-                                        <ChatCard
-                                            key={friend.email}
-                                            senderName={friend.name}
-                                            senderAvatar={friend.avatarURL}
-                                            lastMessage={
-                                                friend.lastMessageDetails
-                                                    ?.message || ""
-                                            }
-                                            lastMessageSentByCurrentUser={
-                                                friend.lastMessageDetails
-                                                    ?.sender === user?.email
-                                            }
-                                            lastMessageTimestamp={
-                                                friend.lastMessageDetails
-                                                    ?.sentAt ||
-                                                new Date().toDateString()
-                                            }
-                                            selected={true}
-                                        />
-                                    </ButtonBase>
-                                </Link>
-                            ))}
-                        </StyledChatList>
-                    </>
+                    <StyledChatList>
+                        {friends.map((friend) => (
+                            <Link to={`/chat/${friend.email}`}>
+                                <ButtonBase>
+                                    <ChatCard
+                                        key={friend.email}
+                                        senderName={friend.name}
+                                        senderAvatar={friend.avatarURL}
+                                        lastMessage={
+                                            friend.lastMessageDetails
+                                                ?.message || ""
+                                        }
+                                        lastMessageSentByCurrentUser={
+                                            friend.lastMessageDetails
+                                                ?.sender === user?.email
+                                        }
+                                        lastMessageTimestamp={
+                                            friend.lastMessageDetails?.sentAt ||
+                                            new Date().toDateString()
+                                        }
+                                        selected={true}
+                                    />
+                                </ButtonBase>
+                            </Link>
+                        ))}
+                    </StyledChatList>
                 )}
             </StyledChatListContainer>
             <StyledActiveChatContainer>
                 <Switch>
                     <Route exact path="/chat"></Route>
                     <Route path="/chat/:chatId">
-                        <ChatDetails friendsMap={friendsMap} translationLanguages={translationLanguages}/>
+                        <ChatDetails
+                            friendsMap={friendsMap}
+                            translationLanguages={translationLanguages}
+                        />
                     </Route>
                 </Switch>
             </StyledActiveChatContainer>

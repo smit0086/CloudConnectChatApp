@@ -8,10 +8,8 @@ interface LayoutProps {
     children: React.ReactNode
 }
 
-const queryClient = new QueryClient()
 const Layout: React.FC<LayoutProps> = (props) => {
   return (
-    <QueryClientProvider client={queryClient}>
     <StyledSurface>
       <StyledNavBarContainer>
         <NavBar />
@@ -22,7 +20,6 @@ const Layout: React.FC<LayoutProps> = (props) => {
         </StyledCard>
         </StyledCardContainer>
     </StyledSurface>
-    </QueryClientProvider>
   )
 }
 

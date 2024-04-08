@@ -1,5 +1,20 @@
-import { ChangeEvent, FormEvent, useRef, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import { Credentials, useAuth } from "../hooks/useAuth";
+import { StyledLoginForm, StyledLoginSurface } from "./StyledLogin";
+import {
+    Button,
+    FormControl,
+    IconButton,
+    InputAdornment,
+    InputLabel,
+    OutlinedInput,
+    TextField,
+    Typography,
+} from "@mui/material";
+import { StyledCard } from "../components/ui/Card/Card";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { useCustomSnackbar } from "../components/ui/CustomSnackbarProvider/CustomSnackbarProvider";
+import { Link, useHistory } from "react-router-dom";
 
 type CredentialsKeys = keyof Credentials;
 
@@ -15,11 +30,17 @@ export default function SignupPage() {
     const [name, setName] = useState<string>("");
     const [code, setCode] = useState<string>("");
     const { signUp, signupUserStatus, confirmCode } = useAuth();
-
-    if(signupUserStatus === "confirmed") {
-        return <p>Signup confirmed</p>
-    }
-
+    const [showPassword, setShowPassword] = useState(false);
+    const { show } = useCustomSnackbar();
+    const history = useHistory();
+    useEffect(() => {
+        if (signupUserStatus === "confirmed") {
+            show("Signup confirmed! Please login.", "success");
+            history.push("/login");
+        } else if (signupUserStatus === "unconfirmed") {
+            show("Please confirm your email address.", "info");
+        }
+    }, [signupUserStatus]);
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
         userIdRef.current = credentials.email;
@@ -52,23 +73,42 @@ export default function SignupPage() {
         });
     }
 
+    const handleClickShowPassword = () => setShowPassword((show) => !show);
+    if (signupUserStatus === "confirmed") {
+        return <p>Signup confirmed</p>;
+    }
+    const handleMouseDownPassword = (
+        event: React.MouseEvent<HTMLButtonElement>
+    ) => {
+        event.preventDefault();
+    };
+
+   
     return (
-        <>
-            <h1>Signup</h1>
+        <StyledLoginSurface>
             {signupUserStatus === "unconfirmed" ? (
                 <>
-                    <form onSubmit={handleConfirmCode}>
-                        <label>
-                            Code:
-                            <input
+                    <StyledLoginForm onSubmit={handleConfirmCode}>
+                        <StyledCard>
+                            <Typography variant="h3">Signup</Typography>
+                            <TextField
+                                style={{
+                                    marginTop: "16px",
+                                    marginBottom: "16px",
+                                }}
                                 name="code"
+                                id="standard-name"
+                                label="Name"
+                                variant="outlined"
+                                fullWidth
                                 value={code}
                                 onChange={handleInputChange}
-                                required
                             />
-                        </label>
-                        <button type="submit">Submit</button>
-                    </form>
+                            <Button variant="contained" type="submit">
+                                Verify
+                            </Button>
+                        </StyledCard>
+                    </StyledLoginForm>
                 </>
             ) : (
                 <>
@@ -76,41 +116,90 @@ export default function SignupPage() {
                         <p>Signup confirmed</p>
                     ) : (
                         <>
-                            <form onSubmit={handleSubmit}>
-                                <label>
-                                    Email:
-                                    <input
-                                        name="email"
-                                        value={credentials.email}
-                                        onChange={handleInputChange}
-                                        required
-                                    />
-                                </label>
-                                <label>
-                                    Password:
-                                    <input
-                                        name="password"
-                                        type="password"
-                                        value={credentials.password}
-                                        onChange={handleInputChange}
-                                        required
-                                    />
-                                </label>
-                                <label>
-                                    Name:
-                                    <input
+                            <StyledLoginForm onSubmit={handleSubmit}>
+                                <StyledCard>
+                                    <Typography variant="h3">Signup</Typography>
+                                    <TextField
+                                        style={{
+                                            marginTop: "16px",
+                                            marginBottom: "16px",
+                                        }}
                                         name="name"
+                                        id="standard-name"
+                                        label="Name"
+                                        variant="outlined"
+                                        fullWidth
                                         value={name}
                                         onChange={handleInputChange}
-                                        required
                                     />
-                                </label>
-                                <button type="submit">Submit</button>
-                            </form>
+                                    <TextField
+                                        style={{
+                                            marginBottom: "16px",
+                                        }}
+                                        name="email"
+                                        id="standard-email"
+                                        label="Email"
+                                        variant="outlined"
+                                        fullWidth
+                                        value={credentials.email}
+                                        onChange={handleInputChange}
+                                    />
+                                    <FormControl
+                                        style={{
+                                            marginBottom: "16px",
+                                        }}
+                                        fullWidth
+                                        variant="outlined"
+                                    >
+                                        <InputLabel htmlFor="outlined-adornment-password">
+                                            Password
+                                        </InputLabel>
+                                        <OutlinedInput
+                                            id="outlined-adornment-password"
+                                            type={
+                                                showPassword
+                                                    ? "text"
+                                                    : "password"
+                                            }
+                                            endAdornment={
+                                                <InputAdornment position="end">
+                                                    <IconButton
+                                                        aria-label="toggle password visibility"
+                                                        onClick={
+                                                            handleClickShowPassword
+                                                        }
+                                                        onMouseDown={
+                                                            handleMouseDownPassword
+                                                        }
+                                                        edge="end"
+                                                    >
+                                                        {showPassword ? (
+                                                            <VisibilityOff />
+                                                        ) : (
+                                                            <Visibility />
+                                                        )}
+                                                    </IconButton>
+                                                </InputAdornment>
+                                            }
+                                            label="Password"
+                                            name="password"
+                                            value={credentials.password}
+                                            onChange={handleInputChange}
+                                            fullWidth
+                                        />
+                                    </FormControl>
+                                    <Button variant="contained" type="submit">
+                                        Signup
+                                    </Button>
+                                    <div>
+                    <Link to="/login"><Button type="button" variant="text">Login instead</Button></Link>
+                    </div>
+                                </StyledCard>
+                            </StyledLoginForm>
                         </>
                     )}
                 </>
             )}
-        </>
+        </StyledLoginSurface>
     );
 }
