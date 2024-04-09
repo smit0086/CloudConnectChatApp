@@ -98,7 +98,7 @@ export default function SignupPage() {
                                 }}
                                 name="code"
                                 id="standard-name"
-                                label="Name"
+                                label="Code"
                                 variant="outlined"
                                 fullWidth
                                 value={code}
